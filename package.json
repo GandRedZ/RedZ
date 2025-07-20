@@ -2,12 +2,21 @@
   "name": "@./source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
   "private": true,
-  "dependencies": {},
+  "scripts": {
+    "migrate:make": "knex --knexfile services/service_name/knexfile.ts migrate:make",
+    "migrate:latest": "knex --knexfile services/service_name/knexfile.ts migrate:latest",
+    "migrate:rollback": "knex --knexfile services/service_name/knexfile.ts migrate:rollback"
+  },
+  "dependencies": {
+    "knex": "^3.1.0",
+    "pg": "^8.16.3"
+  },
   "devDependencies": {
     "@nx/js": "21.2.3",
-    "nx": "21.2.3"
+    "nx": "21.2.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   },
   "workspaces": [
     "packages/*"
