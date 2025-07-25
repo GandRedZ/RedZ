@@ -5,9 +5,9 @@ const config: { [key: string]: Knex.Config } = {
     client: "pg",
     connection: {
       host: process.env.DB_HOST || "localhost",
-      port: parseInt(process.env.DB_PORT) || 5432,
-      user: process.env.DB_USER || "redz_user",
-      password: process.env.DB_PASSWORD || "redz_password",
+      port: parseInt(process.env.DB_PORT || "5432"),
+      user: process.env.DB_USER || "redz",
+      password: process.env.DB_PASSWORD || "redz",
       database: process.env.DB_DATABASE || "redz_db",
     },
     migrations: {
@@ -19,9 +19,9 @@ const config: { [key: string]: Knex.Config } = {
     client: "pg",
     connection: {
       host: process.env.DB_HOST || "localhost",
-      port: parseInt(process.env.DB_PORT) || 5432,
-      user: process.env.DB_USER || "redz_user",
-      password: process.env.DB_PASSWORD || "redz_password",
+      port: parseInt(process.env.DB_PORT || "5432"),
+      user: process.env.DB_USER || "redz",
+      password: process.env.DB_PASSWORD || "redz",
       database: process.env.DB_DATABASE || "redz_db_test",
     },
     migrations: {
@@ -32,11 +32,11 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     client: "pg",
     connection: {
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT),
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
+      host: process.env.DB_HOST || "localhost",
+      port: parseInt(process.env.DB_PORT || "5432"),
+      user: process.env.DB_USER || "redz",
+      password: process.env.DB_PASSWORD || "redz",
+      database: process.env.DB_DATABASE || "redz_db",
     },
     migrations: {
       directory: "./migrations",
@@ -44,4 +44,5 @@ const config: { [key: string]: Knex.Config } = {
     },
   },
 };
+
 export default config;
