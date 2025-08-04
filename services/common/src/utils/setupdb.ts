@@ -28,7 +28,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Carga y parsea el knexfile para obtener la configuración
+   * Loads and parses the knexfile to get configuration
    */
   private async loadKnexConfig(
     knexFilePath: string,
@@ -40,13 +40,9 @@ class DatabaseSetup {
       throw new Error(`Knexfile not found at: ${fullPath}`);
     }
 
-    console.log(`📄 Loading knexfile from: ${fullPath}`);
-
     try {
-      // Limpiar el cache de require para recargar el archivo
       delete require.cache[require.resolve(fullPath)];
 
-      // Cargar el knexfile
       const knexConfig = require(fullPath);
       const config = knexConfig.default || knexConfig;
 
@@ -76,36 +72,20 @@ class DatabaseSetup {
   }
 
   /**
-   * Crea la base de datos si no existe (PostgreSQL usando contenedor Docker)
+   * Creates the database if it doesn't exist (PostgreSQL using Docker container)
    */
   private async createDatabase(config: DatabaseConfig): Promise<void> {
-    console.log(
-      `\n🗄️ Creating PostgreSQL database if not exists: ${config.database}`
-    );
-
     try {
       const host = config.host;
       const port = config.port;
       const user = config.user;
       const password = config.password;
 
-      // Usar el contenedor de PostgreSQL que ya está corriendo
-      const containerName = "postgres"; // Nombre de tu contenedor
+      // Use the PostgreSQL container that's already running
+      const containerName = "postgres"; // Your container name
 
-      // Verificar que el contenedor esté corriendo
-      try {
-        execSync(`docker ps -q -f name=${containerName}`, { stdio: "pipe" });
-        console.log(`🐳 Using PostgreSQL container: ${containerName}`);
-      } catch (error) {
-        throw new Error(
-          `PostgreSQL container '${containerName}' is not running. Please start it with: docker-compose up -d postgres`
-        );
-      }
-
-      // Comando para verificar si la base de datos existe
+      // Command to check if the database exists
       const checkDbCommand = `docker exec ${containerName} psql -U ${user} -d postgres -t -c "SELECT 1 FROM pg_database WHERE datname='${config.database}'"`;
-
-      console.log(`🔍 Checking if database exists...`);
 
       let dbExists = false;
       try {
@@ -121,7 +101,7 @@ class DatabaseSetup {
       }
 
       if (!dbExists) {
-        // Crear la base de datos usando el contenedor
+        // Create the database using the container
         const createDbCommand = `docker exec ${containerName} psql -U ${user} -d postgres -c "CREATE DATABASE ${config.database};"`;
         console.log(`🔄 Creating database: ${config.database}`);
 
@@ -154,7 +134,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Ejecuta un comando de Knex
+   * Executes a Knex command
    */
   private async executeKnexCommand(
     knexFilePath: string,
@@ -179,7 +159,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Ejecuta las migraciones con creación previa de BD
+   * Executes migrations with prior database creation
    */
   async migrate(options: SetupDbOptions): Promise<void> {
     console.log(`\n🚀 Starting database setup and migration...`);
@@ -187,18 +167,18 @@ class DatabaseSetup {
     console.log(`🌍 Environment: ${options.environment}`);
 
     try {
-      // 1. Cargar configuración
+      // 1. Load configuration
       const config = await this.loadKnexConfig(
         options.knexFileLocation,
         options.environment
       );
 
-      // 2. Crear base de datos si no existe
+      // 2. Create database if it doesn't exist
       if (options.createDatabase !== false) {
         await this.createDatabase(config);
       }
 
-      // 3. Ejecutar migraciones
+      // 3. Execute migrations
       console.log(`\n📊 Running migrations...`);
       await this.executeKnexCommand(
         options.knexFileLocation,
@@ -214,7 +194,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Rollback de migraciones
+   * Rollback migrations
    */
   async rollback(options: SetupDbOptions): Promise<void> {
     console.log(`\n🔄 Starting rollback...`);
@@ -233,7 +213,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Ejecuta seeds
+   * Execute seeds
    */
   async seed(options: SetupDbOptions): Promise<void> {
     console.log(`\n🌱 Starting seeding...`);
@@ -272,7 +252,7 @@ class DatabaseSetup {
       // 2. Migrate
       await this.migrate(options);
 
-      // 3. Seed (solo en development por defecto)
+      // 3. Seed (only in development by default)
       if (options.environment === "development") {
         await this.seed(options);
       }
@@ -283,7 +263,7 @@ class DatabaseSetup {
   }
 
   /**
-   * Muestra el estado de las migraciones
+   * Shows migration status
    */
   async status(options: SetupDbOptions): Promise<void> {
     console.log(`\n📊 Checking migration status...`);
@@ -301,32 +281,32 @@ class DatabaseSetup {
   }
 }
 
-// Función principal que funciona con la configuración de Nx
+// Main function that works with Nx configuration
 async function main() {
-  // Parsear argumentos de línea de comandos
+  // Parse command line arguments
   let knexFileLocation = "";
   let environment = "development";
 
   const args = process.argv.slice(2);
 
-  // Buscar argumentos en formato --key=value
+  // Search for arguments in --key=value format
   for (const arg of args) {
     if (arg.startsWith("--knexFileLocation=")) {
       knexFileLocation = arg.split("=")[1];
     } else if (arg.startsWith("--environment=")) {
       let envValue = arg.split("=")[1];
-      // Limpiar la interpolación de Nx si viene sin resolver
+      // Clean Nx interpolation if it comes unresolved
       if (
         envValue.includes("{args.environment") ||
         envValue === "\"{args.environment || 'development'}\""
       ) {
         envValue = "development";
       }
-      environment = envValue.replace(/['"]/g, ""); // Remover comillas
+      environment = envValue.replace(/['"]/g, ""); // Remove quotes
     }
   }
 
-  // Fallback a variables de entorno si no se encontraron en args
+  // Fallback to environment variables if not found in args
   if (!knexFileLocation) {
     knexFileLocation = process.env.knexFileLocation || "";
   }
@@ -334,7 +314,7 @@ async function main() {
     environment = process.env.environment || "development";
   }
 
-  // Validar que se proporcionó knexFileLocation
+  // Validate that knexFileLocation was provided
   if (!knexFileLocation) {
     console.error("❌ knexFileLocation is required");
     console.log(
@@ -358,7 +338,7 @@ async function main() {
     console.log(`📁 Knexfile: ${options.knexFileLocation}`);
     console.log(`🌍 Environment: ${options.environment}`);
 
-    // Por defecto ejecuta migrate (que incluye creación de BD)
+    // By default execute migrate (which includes database creation)
     await setup.migrate(options);
   } catch (error) {
     console.error("\n❌ Database setup failed:", error.message);
@@ -366,13 +346,13 @@ async function main() {
   }
 }
 
-// Función para uso programático
+// Function for programmatic use
 export async function runDatabaseSetup(options: SetupDbOptions) {
   const setup = new DatabaseSetup();
   return setup.migrate(options);
 }
 
-// Ejecutar si es el archivo principal
+// Execute if this is the main file
 if (require.main === module) {
   main().catch((error) => {
     console.error("Fatal error:", error);

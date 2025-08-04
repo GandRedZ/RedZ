@@ -3,13 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "scripts": {
-    "db:setup": "tsx services/common/source/utils/setupdb.ts",
-    "db:migrate": "cd services/service_name && knex migrate:latest",
-    "db:rollback": "cd services/service_name && knex migrate:rollback",
-    "db:seed": "cd services/service_name && knex migrate:seed",
-    "db:status": "cd services/service_name && knex migrate:status"
-  },
+  "scripts": {},
   "dependencies": {
     "dotenv": "^17.2.0",
     "knex": "^3.1.0",
