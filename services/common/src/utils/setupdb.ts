@@ -72,18 +72,9 @@ class DatabaseSetup {
     }
   }
 
-  /**
-   * Creates the database if it doesn't exist (PostgreSQL using Docker container)
-   */
   private async createDatabase(config: DatabaseConfig): Promise<void> {
     try {
-      const host = config.host;
-      const port = config.port;
-      const user = config.user;
-      const password = config.password;
-
-      // Use the PostgreSQL container that's already running
-      const containerName = "postgres"; // Your container name
+      const containerName = "postgres";
 
       // Verify that the container is running
       try {
