@@ -49,7 +49,7 @@
         "lintFilePatterns": ["services/service_name/**/*.{ts,tsx,js,jsx}"]
       }
     },
-    "database-setup": {
+    "database:setup": {
       "executor": "nx:run-commands",
       "options": {
         "command": "tsx ../common/source/utils/setupdb.ts",
@@ -69,19 +69,15 @@
         }
       }
     },
-    "database_migrate": {
+    "database:migrate": {
       "executor": "nx:run-commands",
       "options": {
         "command": "tsx {path_to_the_util}",
         "knexfileLocation": "{path_to_knexFile}",
         "environment": "{args.environment}"
-      },
-      "args": {
-        "environment": ""
-      },
-      "defaultConfiguration": "development"
+      }
     },
-    "database_rollback": {
+    "database:rollback": {
       "executor": "nx:run-commands",
       "options": {
         "command": "knex migrate:rollback --knexfile knexfile.ts",
@@ -104,7 +100,7 @@
         }
       }
     },
-    "database_drop": {
+    "database:drop": {
       "executor": "nx:run-commands",
       "options": {
         "command": "knex migrate:rollback --all --knexfile knexfile.ts",
@@ -127,7 +123,7 @@
         }
       }
     },
-    "database_seed": {
+    "database:seed": {
       "executor": "nx:run-commands",
       "options": {
         "command": "knex seed:run --knexfile knexfile.ts",
@@ -150,7 +146,7 @@
         }
       }
     },
-    "database_status": {
+    "database:status": {
       "executor": "nx:run-commands",
       "options": {
         "command": "knex migrate:status --knexfile knexfile.ts",
@@ -173,7 +169,7 @@
         }
       }
     },
-    "database_reset": {
+    "database:reset": {
       "executor": "nx:run-commands",
       "options": {
         "command": "knex migrate:rollback --all --knexfile knexfile.ts && knex migrate:latest --knexfile knexfile.ts && knex seed:run --knexfile knexfile.ts",

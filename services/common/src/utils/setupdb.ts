@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { existsSync } from "fs";
-import { resolve, join, dirname } from "path";
+import { resolve } from "path";
 import { execSync } from "child_process";
 
 interface DatabaseConfig {
@@ -18,13 +18,23 @@ interface SetupDbOptions {
   environment: string;
   createDatabase?: boolean;
   verbose?: boolean;
+  cwd?: string;
 }
+
+type DatabaseAction =
+  | "migrate"
+  | "rollback"
+  | "drop"
+  | "seed"
+  | "status"
+  | "reset"
+  | "setup";
 
 class DatabaseSetup {
   private rootPath: string;
 
-  constructor() {
-    this.rootPath = process.cwd();
+  constructor(cwd?: string) {
+    this.rootPath = cwd || process.cwd();
   }
 
   /**
@@ -44,7 +54,7 @@ class DatabaseSetup {
       // Clear require cache to reload the file
       delete require.cache[require.resolve(fullPath)];
 
-      // Load knexfile
+      // Load knexfile (support both .js and .ts files)
       const knexConfig = require(fullPath);
       const config = knexConfig.default || knexConfig;
 
@@ -62,8 +72,8 @@ class DatabaseSetup {
         client: dbConfig.client,
         host: dbConfig.connection.host || "localhost",
         port: dbConfig.connection.port || 5432,
-        user: dbConfig.connection.user || "redz",
-        password: dbConfig.connection.password || "redz",
+        user: dbConfig.connection.user || "postgres",
+        password: dbConfig.connection.password || "postgres",
         database: dbConfig.connection.database,
       };
     } catch (error) {
@@ -72,8 +82,12 @@ class DatabaseSetup {
     }
   }
 
+  /**
+   * Creates the database if it doesn't exist (PostgreSQL using Docker container)
+   */
   private async createDatabase(config: DatabaseConfig): Promise<void> {
     try {
+      // Use the PostgreSQL container that's already running
       const containerName = "postgres";
 
       // Verify that the container is running
@@ -133,15 +147,15 @@ class DatabaseSetup {
         cwd: this.rootPath,
       });
     } catch (error) {
-      console.error(`Command failed:`, error);
+      console.error(`Knex command failed: ${command}`);
       throw error;
     }
   }
 
   /**
-   * Executes migrations with prior database creation
+   * Database setup: Create database + Run migrations
    */
-  async migrate(options: SetupDbOptions): Promise<void> {
+  async setup(options: SetupDbOptions): Promise<void> {
     try {
       const config = await this.loadKnexConfig(
         options.knexFileLocation,
@@ -157,6 +171,10 @@ class DatabaseSetup {
         options.environment,
         "migrate:latest"
       );
+
+      console.log(
+        `Database setup completed successfully for ${options.environment}`
+      );
     } catch (error) {
       console.error(`Database setup failed:`, error);
       throw error;
@@ -164,7 +182,23 @@ class DatabaseSetup {
   }
 
   /**
-   * Rollback migrations
+   * Run latest migrations
+   */
+  async migrate(options: SetupDbOptions): Promise<void> {
+    try {
+      await this.executeKnexCommand(
+        options.knexFileLocation,
+        options.environment,
+        "migrate:latest"
+      );
+    } catch (error) {
+      console.error(`Migration failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Rollback last migration
    */
   async rollback(options: SetupDbOptions): Promise<void> {
     try {
@@ -175,6 +209,22 @@ class DatabaseSetup {
       );
     } catch (error) {
       console.error(`Rollback failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Drop all migrations (rollback all)
+   */
+  async drop(options: SetupDbOptions): Promise<void> {
+    try {
+      await this.executeKnexCommand(
+        options.knexFileLocation,
+        options.environment,
+        "migrate:rollback --all"
+      );
+    } catch (error) {
+      console.error(`Drop migrations failed:`, error);
       throw error;
     }
   }
@@ -196,32 +246,6 @@ class DatabaseSetup {
   }
 
   /**
-   * Fresh: Rollback all + Migrate + Seed
-   */
-  async fresh(options: SetupDbOptions): Promise<void> {
-    try {
-      try {
-        await this.executeKnexCommand(
-          options.knexFileLocation,
-          options.environment,
-          "migrate:rollback --all"
-        );
-      } catch (error) {
-        // Database might be empty
-      }
-
-      await this.migrate(options);
-
-      if (options.environment === "development") {
-        await this.seed(options);
-      }
-    } catch (error) {
-      console.error(`Fresh setup failed:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Shows migration status
    */
   async status(options: SetupDbOptions): Promise<void> {
@@ -236,72 +260,169 @@ class DatabaseSetup {
       throw error;
     }
   }
+
+  /**
+   * Reset: Drop all + Migrate + Seed
+   */
+  async reset(options: SetupDbOptions): Promise<void> {
+    try {
+      // Drop all migrations
+      try {
+        await this.drop(options);
+      } catch (error) {
+        // Database might be empty
+      }
+
+      // Run migrations
+      await this.migrate(options);
+
+      // Run seeds (only in development by default)
+      if (options.environment === "development") {
+        await this.seed(options);
+      }
+    } catch (error) {
+      console.error(`Database reset failed:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute any database action
+   */
+  async execute(
+    action: DatabaseAction,
+    options: SetupDbOptions
+  ): Promise<void> {
+    switch (action) {
+      case "setup":
+        return this.setup(options);
+      case "migrate":
+        return this.migrate(options);
+      case "rollback":
+        return this.rollback(options);
+      case "drop":
+        return this.drop(options);
+      case "seed":
+        return this.seed(options);
+      case "status":
+        return this.status(options);
+      case "reset":
+        return this.reset(options);
+      default:
+        throw new Error(`Unknown action: ${action}`);
+    }
+  }
 }
 
-//  Main function that works with Nx configuration
-async function main() {
-  // Parse command line arguments
-  let knexFileLocation = "";
-  let environment = "development";
-
+// Parse command line arguments with support for both formats
+function parseArguments(): { action: DatabaseAction; options: SetupDbOptions } {
   const args = process.argv.slice(2);
 
-  // Search for arguments in --key=value format
-  for (const arg of args) {
-    if (arg.startsWith("--knexFileLocation=")) {
+  let knexFileLocation = "";
+  let environment = "development";
+  let action: DatabaseAction = "setup";
+  let cwd = process.cwd();
+
+  // Parse arguments in different formats
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (
+      arg.startsWith("--knexFileLocation=") ||
+      arg.startsWith("--knexfileLocation=")
+    ) {
       knexFileLocation = arg.split("=")[1];
     } else if (arg.startsWith("--environment=")) {
       let envValue = arg.split("=")[1];
       // Clean Nx interpolation if it comes unresolved
       if (
         envValue.includes("{args.environment") ||
-        envValue === "\"{args.environment || 'development'}\""
+        envValue === '"{args.environment}"' ||
+        envValue === "'{args.environment}'"
       ) {
         envValue = "development";
       }
-      environment = envValue.replace(/['"]/g, ""); // Remove quotes
+      environment = envValue.replace(/['"]/g, "");
+    } else if (arg.startsWith("--action=")) {
+      action = arg.split("=")[1] as DatabaseAction;
+    } else if (arg.startsWith("--cwd=")) {
+      cwd = arg.split("=")[1];
+    } else if (arg === "--migrate") {
+      action = "migrate";
+    } else if (arg === "--rollback") {
+      action = "rollback";
+    } else if (arg === "--drop") {
+      action = "drop";
+    } else if (arg === "--seed") {
+      action = "seed";
+    } else if (arg === "--status") {
+      action = "status";
+    } else if (arg === "--reset") {
+      action = "reset";
     }
   }
 
-  // Fallback to environment variables if not found in args
+  // Fallback to environment variables
   if (!knexFileLocation) {
-    knexFileLocation = process.env.knexFileLocation || "";
+    knexFileLocation =
+      process.env.knexFileLocation || process.env.knexfileLocation || "";
   }
   if (!environment || environment === "development") {
     environment = process.env.environment || "development";
   }
 
-  // Validate that knexFileLocation was provided
+  // Validate required arguments
   if (!knexFileLocation) {
     console.error("knexFileLocation is required");
+    console.log("Usage examples:");
     console.log(
-      "Usage: tsx setupdb.ts --knexFileLocation=<path> --environment=<env>"
+      "  tsx setupdb.ts --knexFileLocation=./knexfile.ts --environment=development"
     );
+    console.log(
+      "  tsx setupdb.ts --knexFileLocation=./knexfile.ts --action=migrate"
+    );
+    console.log("  tsx setupdb.ts --knexFileLocation=./knexfile.ts --migrate");
     process.exit(1);
   }
 
-  const options: SetupDbOptions = {
-    knexFileLocation,
-    environment,
-    createDatabase: true,
-    verbose: process.argv.includes("--verbose") || process.argv.includes("-v"),
+  return {
+    action,
+    options: {
+      knexFileLocation,
+      environment,
+      createDatabase: action === "setup",
+      verbose:
+        process.argv.includes("--verbose") || process.argv.includes("-v"),
+      cwd,
+    },
   };
+}
 
-  const setup = new DatabaseSetup();
-
+// Main function compatible with Nx configuration
+async function main() {
   try {
-    // By default execute migrate (which includes database creation)
-    await setup.migrate(options);
+    const { action, options } = parseArguments();
+    const setup = new DatabaseSetup(options.cwd);
+
+    await setup.execute(action, options);
   } catch (error) {
-    console.error("Database setup failed:", error.message);
+    console.error("Database operation failed:", error.message);
     process.exit(1);
   }
 }
 
 // Function for programmatic use
-export async function runDatabaseSetup(options: SetupDbOptions) {
-  const setup = new DatabaseSetup();
-  return setup.migrate(options);
+export async function runDatabaseAction(
+  action: DatabaseAction,
+  options: SetupDbOptions
+): Promise<void> {
+  const setup = new DatabaseSetup(options.cwd);
+  return setup.execute(action, options);
+}
+
+// Legacy function for backward compatibility
+export async function runDatabaseSetup(options: SetupDbOptions): Promise<void> {
+  return runDatabaseAction("setup", options);
 }
 
 // Execute if this is the main file
@@ -312,4 +433,4 @@ if (require.main === module) {
   });
 }
 
-export { DatabaseSetup, SetupDbOptions };
+export { DatabaseSetup, SetupDbOptions, DatabaseAction };
