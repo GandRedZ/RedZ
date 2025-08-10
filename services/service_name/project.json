@@ -72,9 +72,9 @@
     "database:migrate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsx {path_to_the_util}",
-        "knexfileLocation": "{path_to_knexFile}",
-        "environment": "{args.environment}"
+        "command": "tsx services/common/src/utils/setupdb.ts",
+        "knexfileLocation": "services/service_name/knexfile.ts",
+        "environment": "development"
       }
     },
     "database:rollback": {
