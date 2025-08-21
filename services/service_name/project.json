@@ -1,0 +1,246 @@
+{
+  "name": "service_name",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/service_name",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/services/service_name"
+      },
+      "configurations": {
+        "development": {
+          "outputPath": "dist/services/service_name"
+        },
+        "production": {
+          "outputPath": "dist/services/service_name"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/next:dev",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "service_name:build",
+        "dev": true
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "services/service_name/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverageReporters": ["text"]
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["services/service_name/**/*.{ts,tsx,js,jsx}"]
+      }
+    },
+    "database:setup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx ../common/source/utils/setupdb.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "environment": "development"
+        },
+        "test": {
+          "environment": "test"
+        },
+        "production": {
+          "environment": "production"
+        }
+      }
+    },
+    "database:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx {path_to_the_util}",
+        "knexfileLocation": "{path_to_knexFile}",
+        "environment": "{args.environment}"
+      }
+    },
+    "database:rollback": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex migrate:rollback --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "command": "knex migrate:rollback --knexfile knexfile.ts --env development",
+          "environment": "development"
+        },
+        "test": {
+          "command": "knex migrate:rollback --knexfile knexfile.ts --env test",
+          "environment": "test"
+        },
+        "production": {
+          "command": "knex migrate:rollback --knexfile knexfile.ts --env production",
+          "environment": "production"
+        }
+      }
+    },
+    "database:drop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex migrate:rollback --all --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env development",
+          "environment": "development"
+        },
+        "test": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env test",
+          "environment": "test"
+        },
+        "production": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env production",
+          "environment": "production"
+        }
+      }
+    },
+    "database:seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex seed:run --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "command": "knex seed:run --knexfile knexfile.ts --env development",
+          "environment": "development"
+        },
+        "test": {
+          "command": "knex seed:run --knexfile knexfile.ts --env test",
+          "environment": "test"
+        },
+        "production": {
+          "command": "knex seed:run --knexfile knexfile.ts --env production",
+          "environment": "production"
+        }
+      }
+    },
+    "database:status": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex migrate:status --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "command": "knex migrate:status --knexfile knexfile.ts --env development",
+          "environment": "development"
+        },
+        "test": {
+          "command": "knex migrate:status --knexfile knexfile.ts --env test",
+          "environment": "test"
+        },
+        "production": {
+          "command": "knex migrate:status --knexfile knexfile.ts --env production",
+          "environment": "production"
+        }
+      }
+    },
+    "database:reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex migrate:rollback --all --knexfile knexfile.ts && knex migrate:latest --knexfile knexfile.ts && knex seed:run --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      },
+      "configurations": {
+        "development": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env development && knex migrate:latest --knexfile knexfile.ts --env development && knex seed:run --knexfile knexfile.ts --env development",
+          "environment": "development"
+        },
+        "test": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env test && knex migrate:latest --knexfile knexfile.ts --env test && knex seed:run --knexfile knexfile.ts --env test",
+          "environment": "test"
+        },
+        "production": {
+          "command": "knex migrate:rollback --all --knexfile knexfile.ts --env production && knex migrate:latest --knexfile knexfile.ts --env production && knex seed:run --knexfile knexfile.ts --env production",
+          "environment": "production"
+        }
+      }
+    },
+    "make-migration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex migrate:make {args.name} --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      }
+    },
+    "make-seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "knex seed:make {args.name} --knexfile knexfile.ts",
+        "cwd": "services/service_name",
+        "knexFileLocation": "./knexfile.ts",
+        "environment": "development"
+      }
+    },
+    "generate-swagger": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx scripts/generate-swagger.ts",
+        "cwd": "services/service_name"
+      }
+    },
+    "start-fastify": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/server.ts",
+        "cwd": "services/service_name"
+      },
+      "configurations": {
+        "development": {
+          "command": "tsx --watch src/server.ts",
+          "environment": "development"
+        },
+        "production": {
+          "command": "node dist/server.js",
+          "environment": "production"
+        }
+      }
+    },
+    "type-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "services/service_name"
+      }
+    }
+  },
+  "tags": ["type:app", "scope:service", "database:postgresql", "api:fastify"]
+}

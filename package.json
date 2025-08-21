@@ -1,13 +1,21 @@
 {
-  "name": "@./source",
+  "name": "source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
   "private": true,
-  "dependencies": {},
+  "scripts": {},
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "knex": "^3.1.0",
+    "pg": "^8.16.3"
+  },
   "devDependencies": {
     "@nx/js": "21.2.3",
-    "nx": "21.2.3"
+    "@types/pg": "^8.15.4",
+    "nx": "21.2.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   },
   "workspaces": [
     "packages/*"
