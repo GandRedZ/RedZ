@@ -18,7 +18,7 @@ interface SetupDbOptions {
   environment: string;
   createDatabase?: boolean;
   verbose?: boolean;
-  cwd?: string;
+  cwd?: string; //allows to work from diferent working directory
 }
 
 type DatabaseAction =
@@ -31,8 +31,9 @@ type DatabaseAction =
   | "setup";
 
 class DatabaseSetup {
-  private rootPath: string;
+  private readonly rootPath: string;
 
+  // work from a specific directory if provided useful to work with nx monorepo
   constructor(cwd?: string) {
     this.rootPath = cwd || process.cwd();
   }
@@ -51,7 +52,6 @@ class DatabaseSetup {
     }
 
     try {
-      // Clear require cache to reload the file
       delete require.cache[require.resolve(fullPath)];
 
       // Load knexfile (support both .js and .ts files)
@@ -91,13 +91,7 @@ class DatabaseSetup {
       const containerName = "postgres";
 
       // Verify that the container is running
-      try {
-        execSync(`docker ps -q -f name=${containerName}`, { stdio: "pipe" });
-      } catch (error) {
-        throw new Error(
-          `PostgreSQL container '${containerName}' is not running. Please start it with: docker-compose up -d postgres`
-        );
-      }
+      execSync(`docker ps -q -f name=${containerName}`, { stdio: "pipe" });
 
       // Command to check if the database exists
       const checkDbCommand = `docker exec ${containerName} psql -U ${config.user} -d postgres -t -c "SELECT 1 FROM pg_database WHERE datname='${config.database}'"`;
@@ -112,7 +106,10 @@ class DatabaseSetup {
         });
         dbExists = result.trim() === "1";
       } catch (error) {
-        // Database doesn't exist
+        console.warn(
+          "Database existence check failed or database does not exist:",
+          error
+        );
       }
 
       if (!dbExists) {
@@ -270,7 +267,10 @@ class DatabaseSetup {
       try {
         await this.drop(options);
       } catch (error) {
-        // Database might be empty
+        console.warn(
+          "Drop migrations failed or database might be empty:",
+          error
+        );
       }
 
       // Run migrations
@@ -324,9 +324,7 @@ function parseArguments(): { action: DatabaseAction; options: SetupDbOptions } {
   let cwd = process.cwd();
 
   // Parse arguments in different formats
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
+  for (const arg of args) {
     if (
       arg.startsWith("--knexFileLocation=") ||
       arg.startsWith("--knexfileLocation=")
