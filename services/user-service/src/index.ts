@@ -1,52 +1,42 @@
-import Fastify, { FastifyReply, FastifyRequest } from "fastify";
-import cors from "@fastify/cors";
-import helmet from "@fastify/helmet";
-import jwt from "@fastify/jwt";
-import swagger from "@fastify/swagger";
-import swaggerUi from "@fastify/swagger-ui";
-import { config } from "./config";
-import { setupDatabase } from "./database";
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import jwt from '@fastify/jwt';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
+import { Type } from '@sinclair/typebox';
 
-const errorHandler = async (
-  error: any,
-  request: FastifyRequest,
-  reply: FastifyReply
-) => {
-  // Log the error using Fastify's logger
-  request.log.error(error);
-
-  // Derive status code and message
-  const statusCode = error?.statusCode ?? 500;
-  const message =
-    config.nodeEnv === "production"
-      ? "Internal server error"
-      : error?.message ?? "Unknown error";
-
-  // Send structured error response
-  reply.status(statusCode).send({
-    statusCode,
-    error: error?.name ?? "Error",
-    message,
-  });
+const config = {
+  nodeEnv: process.env.NODE_ENV || 'development',
+  port: Number(process.env.PORT ?? 3000),
+  host: process.env.HOST || '0.0.0.0',
+  corsOrigin: process.env.CORS_ORIGIN || '*',
+  jwtSecret: process.env.JWT_SECRET || 'changeme',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
 };
+
+// Local placeholder for database setup to satisfy the missing './database' module.
+// Replace this with your real database initialization (Prisma, TypeORM, pg, etc.)
+async function setupDatabase(): Promise<void> {
+  // No-op during early development or tests; connect to DB here in production.
+  return;
+}
+import { errorHandler } from './middleware/error-handler';
 
 const server = Fastify({
   logger: {
-    level: config.nodeEnv === "production" ? "info" : "debug",
-    transport:
-      config.nodeEnv === "production"
-        ? undefined
-        : {
-            target: "pino-pretty",
-            options: {
-              translateTime: "HH:MM:ss Z",
-              ignore: "pid,hostname",
-            },
-          },
+    level: config.nodeEnv === 'production' ? 'info' : 'debug',
+    transport: config.nodeEnv === 'production' ? undefined : {
+      target: 'pino-pretty',
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+      },
+    },
   },
   ajv: {
     customOptions: {
-      removeAdditional: "all",
+      removeAdditional: 'all',
       coerceTypes: true,
       useDefaults: true,
     },
@@ -69,7 +59,7 @@ async function start() {
     });
 
     await server.register(cors, {
-      origin: config.corsOrigin.split(","),
+      origin: config.corsOrigin.split(','),
       credentials: true,
     });
 
@@ -84,22 +74,22 @@ async function start() {
     await server.register(swagger, {
       openapi: {
         info: {
-          title: "User Service API",
-          description: "Authentication and user management service",
-          version: "1.0.0",
+          title: 'User Service API',
+          description: 'Authentication and user management service',
+          version: '1.0.0',
         },
         servers: [
           {
             url: `http://localhost:${config.port}`,
-            description: "Development server",
+            description: 'Development server',
           },
         ],
         components: {
           securitySchemes: {
             bearerAuth: {
-              type: "http",
-              scheme: "bearer",
-              bearerFormat: "JWT",
+              type: 'http',
+              scheme: 'bearer',
+              bearerFormat: 'JWT',
             },
           },
         },
@@ -107,9 +97,9 @@ async function start() {
     });
 
     await server.register(swaggerUi, {
-      routePrefix: "/docs",
+      routePrefix: '/docs',
       uiConfig: {
-        docExpansion: "list",
+        docExpansion: 'list',
         deepLinking: false,
       },
     });
@@ -118,9 +108,18 @@ async function start() {
     // await server.register(authRoutes, { prefix: '/api/auth' });
     // await server.register(userRoutes, { prefix: '/api/users' });
 
-    // Health check
-    server.get("/health", async () => {
-      return { status: "ok", timestamp: new Date().toISOString() };
+    // Health check with TypeBox schema
+    server.get('/health', {
+      schema: {
+        response: {
+          200: Type.Object({
+            status: Type.String(),
+            timestamp: Type.String(),
+          }),
+        },
+      },
+    }, async () => {
+      return { status: 'ok', timestamp: new Date().toISOString() };
     });
 
     // Error handler
@@ -132,12 +131,8 @@ async function start() {
       host: config.host,
     });
 
-    console.log(
-      `🚀 User Service running on http://${config.host}:${config.port}`
-    );
-    console.log(
-      `📚 API Documentation available at http://${config.host}:${config.port}/docs`
-    );
+    console.log(`🚀 User Service running on http://${config.host}:${config.port}`);
+    console.log(`📚 API Documentation available at http://${config.host}:${config.port}/docs`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -145,7 +140,7 @@ async function start() {
 }
 
 // Graceful shutdown
-const signals = ["SIGINT", "SIGTERM"];
+const signals = ['SIGINT', 'SIGTERM'];
 signals.forEach((signal) => {
   process.on(signal, async () => {
     console.log(`\n${signal} received, closing server...`);

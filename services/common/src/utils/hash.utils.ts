@@ -1,5 +1,8 @@
 import bcrypt from "bcrypt";
-import { config } from "../config";
+
+const config = {
+  bcryptRounds: Number(process.env.BCRYPT_ROUNDS) || 10,
+};
 
 /**
  * Hash a password using bcrypt
