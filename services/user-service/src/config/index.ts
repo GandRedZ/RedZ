@@ -18,15 +18,6 @@ export const config = {
     ssl: process.env.DB_SSL === "true",
   },
 
-  // Redis
-  redis: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: Number.parseInt(process.env.REDIS_PORT || "6379"),
-    password: process.env.REDIS_PASSWORD || undefined,
-    db: Number.parseInt(process.env.REDIS_DB || "0"),
-    client: null as any, // Will be set in database setup
-  },
-
   // JWT
   jwtSecret: process.env.JWT_SECRET || "your-super-secret-jwt-key",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "15m",
