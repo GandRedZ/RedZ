@@ -21,7 +21,7 @@ async function setupDatabase(): Promise<void> {
   // No-op during early development or tests; connect to DB here in production.
   return;
 }
-import { errorHandler } from './middleware/error-handler';
+import { errorHandler } from '../../common/src/utils/error-handler';
 
 const server = Fastify({
   logger: {
