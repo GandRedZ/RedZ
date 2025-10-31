@@ -1,7 +1,0 @@
-{
-  "compilerOptions": {
-    "module": "commonjs"
-  },
-  "include": ["../src/**/*.ts"],
-  "exclude": ["../src/node_modules", "../src/dist"]
-}
