@@ -5,16 +5,8 @@ import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { Type } from '@sinclair/typebox';
-
-
-
-// Local placeholder for database setup to satisfy the missing './database' module.
-// Replace this with your real database initialization (Prisma, TypeORM, pg, etc.)
-async function setupDatabase(): Promise<void> {
-  // No-op during early development or tests; connect to DB here in production.
-  return;
-}
 import { errorHandler } from '../../common/src/utils/error-handler';
+import { config } from './config';
 
 const server = Fastify({
   logger: {
@@ -36,6 +28,9 @@ const server = Fastify({
   },
 });
 
+async function start() {
+  try {
+    // Setup database
 
     // Register plugins
     await server.register(helmet, {
