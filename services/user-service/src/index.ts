@@ -6,14 +6,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { Type } from '@sinclair/typebox';
 
-const config = {
-  nodeEnv: process.env.NODE_ENV || 'development',
-  port: Number(process.env.PORT ?? 3000),
-  host: process.env.HOST || '0.0.0.0',
-  corsOrigin: process.env.CORS_ORIGIN || '*',
-  jwtSecret: process.env.JWT_SECRET || 'changeme',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
-};
+
 
 // Local placeholder for database setup to satisfy the missing './database' module.
 // Replace this with your real database initialization (Prisma, TypeORM, pg, etc.)
@@ -43,10 +36,6 @@ const server = Fastify({
   },
 });
 
-async function start() {
-  try {
-    // Setup database
-    await setupDatabase();
 
     // Register plugins
     await server.register(helmet, {
