@@ -14,22 +14,22 @@
 
 - [ ] **User Service Setup**
 
-  - Set up TypeScript-based user service with Fastify
-  - Create user registration endpoint with email validation
-  - Implement JWT-based authentication
-  - Add password hashing with bcrypt
-  - Create login/logout endpoints
+  - Set up TypeScript-based user service with Fastify (DONE)
+  - Create user registration endpoint with email validation (MISSING)
+  - Implement JWT-based authentication (MISSING)
+  - Add password hashing with bcrypt (DONE)
+  - Create login/logout endpoints (MISSING)
 
 - [ ] **Database Setup**
 
-  - Create PostgreSQL users table migration
-  - Set up Knex.js configuration for user service
-  - Add basic user indexes (email, role)
+  - Create PostgreSQL users table migration (DONE)
+  - Set up Knex.js configuration for user service (DONE)
+  - Add basic user indexes (email, role) (MISSING)
 
 - [ ] **Basic Security**
-  - Implement JWT token generation and validation
-  - Add password reset functionality
-  - Create basic role-based access control (admin, user)
+  - Implement JWT token generation and validation (MISSING)
+  - Add password reset functionality (MISSING)
+  - Create basic role-based access control (admin, user) (MISSING)
 
 ---
 
