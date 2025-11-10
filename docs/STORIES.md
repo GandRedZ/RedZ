@@ -15,10 +15,17 @@
 - [ ] **User Service Setup**
 
   - Set up TypeScript-based user service with Fastify (DONE)
-  - Create user registration endpoint with email validation (MISSING)
-  - Implement JWT-based authentication (MISSING)
+  - Create user registration endpoint with email validation (MISSING) (HIGH PRIORITY) #2
+  - Implement JWT-based authentication (MISSING) (HIGH PRIORITY) 
+    - Branch Name: feature/jwt-basic-auth
+    - Acceptance Criteria:
+      - Users can log in with valid credentials and receive a JWT token.
+      - Protected endpoints require a valid JWT token for access.
+      - Invalid or expired tokens are rejected with appropriate error messages.
+      - Small Presentation on JWT implementation and security considerations.
+      - Folder + file structure for JWT auth implementation.
   - Add password hashing with bcrypt (DONE)
-  - Create login/logout endpoints (MISSING)
+  - Create login/logout endpoints (MISSING) (HIGH PRIORITY) #2
 
 - [ ] **Database Setup**
 
